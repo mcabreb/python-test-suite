@@ -31,6 +31,7 @@ class ProblemPanel(QWidget):
 
     hint_viewed = pyqtSignal()
     solution_viewed = pyqtSignal()
+    flag_requested = pyqtSignal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -106,6 +107,12 @@ class ProblemPanel(QWidget):
         layout.addWidget(self._solution_label)
 
         self._current_solution: str | None = None
+
+        # Flag button (E7-S07)
+        self._flag_button = QPushButton("Flag Problem")
+        self._flag_button.clicked.connect(self.flag_requested)
+        self._flag_button.setVisible(False)
+        layout.addWidget(self._flag_button)
 
     def _on_solution_clicked(self) -> None:
         """Show confirmation dialog, then reveal solution."""
@@ -193,3 +200,6 @@ class ProblemPanel(QWidget):
                 self._solution_button.setToolTip("No solution available")
         else:
             self._solution_button.setVisible(False)
+
+        # Flag button visible in all difficulty modes (E7-S07)
+        self._flag_button.setVisible(mode is not None)

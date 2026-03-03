@@ -4,7 +4,15 @@ from __future__ import annotations
 
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import QLabel, QPushButton, QTextEdit, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (
+    QApplication,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 from pygrind.models.exercise import Exercise
 from pygrind.models.session import DifficultyMode
@@ -81,7 +89,8 @@ class ProblemPanel(QWidget):
 
         self._hint_label = QLabel()
         self._hint_label.setStyleSheet(
-            "font-style: italic; background-color: #FFF9C4; padding: 8px; border-radius: 4px;"
+            "font-style: italic; color: #333; background-color: #FFF9C4;"
+            " padding: 8px; border-radius: 4px;"
         )
         self._hint_label.setWordWrap(True)
         self._hint_label.setVisible(False)
@@ -100,11 +109,19 @@ class ProblemPanel(QWidget):
         mono_sol.setStyleHint(QFont.StyleHint.Monospace)
         self._solution_label.setFont(mono_sol)
         self._solution_label.setStyleSheet(
-            "background-color: #F5F5F5; padding: 8px; border-radius: 4px;"
+            "color: #1a1a1a; background-color: #F5F5F5; padding: 8px; border-radius: 4px;"
         )
         self._solution_label.setWordWrap(True)
         self._solution_label.setVisible(False)
-        layout.addWidget(self._solution_label)
+
+        self._copy_solution_button = QPushButton("Copy Solution")
+        self._copy_solution_button.clicked.connect(self._on_copy_solution)
+        self._copy_solution_button.setVisible(False)
+
+        solution_row = QHBoxLayout()
+        solution_row.addWidget(self._solution_label, stretch=1)
+        solution_row.addWidget(self._copy_solution_button)
+        layout.addLayout(solution_row)
 
         self._current_solution: str | None = None
 
@@ -131,8 +148,14 @@ class ProblemPanel(QWidget):
         text = self._current_solution if self._current_solution else ""
         self._solution_label.setText(text)
         self._solution_label.setVisible(True)
+        self._copy_solution_button.setVisible(True)
         self._solution_button.setEnabled(False)
         self.solution_viewed.emit()
+
+    def _on_copy_solution(self) -> None:
+        """Copy solution code to clipboard."""
+        if self._current_solution:
+            QApplication.clipboard().setText(self._current_solution)
 
     def _on_hint_clicked(self) -> None:
         """Reveal hint text and disable button (one-way)."""
@@ -189,6 +212,7 @@ class ProblemPanel(QWidget):
         # Solution viewer configuration (E7-S02)
         self._current_solution = exercise.solution
         self._solution_label.setVisible(False)
+        self._copy_solution_button.setVisible(False)
 
         if mode == DifficultyMode.BEGINNER:
             self._solution_button.setVisible(True)

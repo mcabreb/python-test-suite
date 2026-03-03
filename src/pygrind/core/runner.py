@@ -10,6 +10,16 @@ from PyQt6.QtCore import QObject, QProcess, QTimer, pyqtSignal
 
 _MEMORY_LIMIT_BYTES = 256 * 1024 * 1024  # 256 MB
 
+# Override input() so prompt strings don't pollute captured stdout.
+# Competitive-programming judges universally strip or suppress prompts.
+_INPUT_PREAMBLE = """\
+import builtins as _builtins
+_raw_input = _builtins.input
+def _clean_input(prompt=""):
+    return _raw_input()
+_builtins.input = _clean_input
+"""
+
 
 class CodeRunner(QObject):
     """Runs user Python code in an isolated subprocess via QProcess."""
@@ -56,16 +66,18 @@ class CodeRunner(QObject):
         self._timer.start(self._timeout_ms)
 
     def _wrap_with_limits(self, code: str) -> str:
-        """Wrap code with resource limits on Unix platforms."""
-        if sys.platform == "win32":
-            return code
-        return (
-            textwrap.dedent(f"""\
-            import resource
-            resource.setrlimit(resource.RLIMIT_AS, ({_MEMORY_LIMIT_BYTES}, {_MEMORY_LIMIT_BYTES}))
-        """)
-            + code
-        )
+        """Wrap code with resource limits and input() prompt suppression."""
+        preamble = _INPUT_PREAMBLE
+        if sys.platform != "win32":
+            mem = _MEMORY_LIMIT_BYTES
+            preamble = (
+                textwrap.dedent(f"""\
+                import resource
+                resource.setrlimit(resource.RLIMIT_AS, ({mem}, {mem}))
+            """)
+                + preamble
+            )
+        return preamble + code
 
     def _on_timeout(self) -> None:
         """Handle execution timeout: kill process and emit timeout signal."""

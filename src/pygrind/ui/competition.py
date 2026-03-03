@@ -70,6 +70,11 @@ class CompetitionWindow(QWidget):
         self.end_button.clicked.connect(self.end_session_requested)
         button_bar.addWidget(self.end_button)
 
+        self.clear_output_button = QPushButton("Clear")
+        self.clear_output_button.setMinimumSize(70, 32)
+        self.clear_output_button.clicked.connect(self._on_clear_output)
+        button_bar.addWidget(self.clear_output_button)
+
         button_bar.addStretch()
 
         self.run_button = QPushButton("Run")
@@ -114,3 +119,7 @@ class CompetitionWindow(QWidget):
         # Keyboard shortcut: Ctrl+Enter → Submit
         self._submit_shortcut = QShortcut(QKeySequence("Ctrl+Return"), self)
         self._submit_shortcut.activated.connect(self.submit_requested)
+
+    def _on_clear_output(self) -> None:
+        """Clear the output panel."""
+        self.output_panel.clear()
